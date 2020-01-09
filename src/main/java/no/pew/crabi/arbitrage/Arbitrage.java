@@ -25,7 +25,7 @@ public class Arbitrage {
         this.cycleGraph = new MutableGraphImpl<>();
     }
 
-    public void addOrder(LimitOrder order) {
+    public ImmutableGraph<String, LimitOrder> addOrder(LimitOrder order) {
         CurrencyPair currencyPair = order.getCurrencyPair();
 
         if (order.getType().equals(Order.OrderType.BID)) {
@@ -37,8 +37,8 @@ public class Arbitrage {
                     order);
         } else {
             // ASK = counter -> base (inverse quoted price)
-            // ln(1/x) = ln(x⁻1) = -ln(x)
-            // This mean in our case we can use log of the price without inverting it :)
+            // ln(1/x) = ln(x^⁻1) = -ln(x)
+            // This means in our case we can use log of the price without inverting it :)
             cycleGraph.upsertEdge(
                     currencyPair.base.getCurrencyCode(),
                     currencyPair.counter.getCurrencyCode(),
@@ -46,11 +46,11 @@ public class Arbitrage {
                     order);
         }
 
+        return cycleGraph.snapshot();
     }
 
-    public List<ArbitragePossibility> findPossibilities() {
-        ImmutableGraph<String, LimitOrder> snapshot = cycleGraph.snapshot();
-        List<List<Pair<String, LimitOrder>>> cycles = NegativeCycle.findCycle(snapshot);
+    public static List<ArbitragePossibility> findPossibilities(ImmutableGraph<String, LimitOrder> graph) {
+        List<List<Pair<String, LimitOrder>>> cycles = NegativeCycle.findCycle(graph);
 
         return cycles
                 .stream()
@@ -67,7 +67,6 @@ public class Arbitrage {
                                         .collect(Collectors.toList())))
                 .collect(Collectors.toList());
     }
-
 
     @Override
     public String toString() {
