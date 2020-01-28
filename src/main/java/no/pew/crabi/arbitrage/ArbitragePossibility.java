@@ -27,7 +27,7 @@ public class ArbitragePossibility {
 
     @Override
     public String toString() {
-        DecimalFormat df = new DecimalFormat("#,###.000000");
+        DecimalFormat df = new DecimalFormat("##,###.000000");
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(path);
         stringBuilder.append("\n");
@@ -40,11 +40,14 @@ public class ArbitragePossibility {
             stringBuilder.append("\t");
             stringBuilder.append(arbitrageStep.getOrder().getCurrencyPair());
             stringBuilder.append(" @ ");
-            stringBuilder.append(df.format(arbitrageStep.getPrice()));
+            stringBuilder.append(String.format("%12s", df.format(arbitrageStep.getPrice())));
             stringBuilder.append(" V: ");
-            stringBuilder.append(df.format(arbitrageStep.volume()));
+            stringBuilder.append(String.format("%12s", df.format(arbitrageStep.volume())));
             stringBuilder.append("\n");
         }
+        stringBuilder.append(" R: ");
+        stringBuilder.append(String.format("%12s", df.format(getRate())));
+
 
         return stringBuilder.toString();
     }

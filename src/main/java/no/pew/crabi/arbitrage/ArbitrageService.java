@@ -2,6 +2,7 @@ package no.pew.crabi.arbitrage;
 
 
 import info.bitrich.xchangestream.bitfinex.BitfinexStreamingExchange;
+import info.bitrich.xchangestream.bitstamp.v2.BitstampStreamingExchange;
 import info.bitrich.xchangestream.core.StreamingExchange;
 import info.bitrich.xchangestream.core.StreamingExchangeFactory;
 import io.reactivex.BackpressureStrategy;
@@ -65,8 +66,6 @@ public class ArbitrageService {
                 .runOn(Schedulers.computation())
                 .flatMap(graph -> Flowable.fromIterable(Arbitrage.findPossibilities(graph)))
                 .sequential()
-                .forEach(arbitragePossibility -> {
-                    System.out.println(arbitragePossibility);
-                });
+                .forEach(System.out::println);
     }
 }

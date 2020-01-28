@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,10 +20,16 @@ public class Arbitrage {
 
     private static final Logger logger = LoggerFactory.getLogger(Arbitrage.class);
 
+    private static final String FEE = "0.002";
+
     private final MutableGraphImpl<String, LimitOrder> cycleGraph;
+    private final BigDecimal bidFee;
+    private final BigDecimal askFee;
 
     public Arbitrage() {
         this.cycleGraph = new MutableGraphImpl<>();
+        this.bidFee = BigDecimal.ONE.subtract(new BigDecimal(FEE));
+        this.askFee = BigDecimal.ONE.add(new BigDecimal(FEE));
     }
 
     public ImmutableGraph<String, LimitOrder> addOrder(LimitOrder order) {
@@ -33,7 +40,7 @@ public class Arbitrage {
             cycleGraph.upsertEdge(
                     currencyPair.counter.getCurrencyCode(),
                     currencyPair.base.getCurrencyCode(),
-                    -Math.log(order.getLimitPrice().doubleValue()),
+                    -Math.log(order.getLimitPrice().multiply(this.bidFee).doubleValue()),
                     order);
         } else {
             // ASK = counter -> base (inverse quoted price)
@@ -42,7 +49,7 @@ public class Arbitrage {
             cycleGraph.upsertEdge(
                     currencyPair.base.getCurrencyCode(),
                     currencyPair.counter.getCurrencyCode(),
-                    Math.log(order.getLimitPrice().doubleValue()),
+                    Math.log(order.getLimitPrice().multiply(this.askFee).doubleValue()),
                     order);
         }
 

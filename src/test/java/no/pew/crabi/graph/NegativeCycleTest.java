@@ -158,8 +158,6 @@ class NegativeCycleTest {
 
     void genRandom() {
 
-        for (int j = 0; j < 20; j++) {
-
             MutableGraphImpl<Integer, Object> graph = new MutableGraphImpl<>();
             Random random = new Random();
             int edges = 300;
@@ -179,7 +177,6 @@ class NegativeCycleTest {
 
             }
             NegativeCycle.findCycle(graph);
-        }
     }
 
 
