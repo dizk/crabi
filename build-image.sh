@@ -1,0 +1,1 @@
+docker build -t dizk/crabi --build-arg APPJAR=target/*.jar .

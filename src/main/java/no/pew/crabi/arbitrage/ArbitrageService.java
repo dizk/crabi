@@ -5,9 +5,13 @@ import info.bitrich.xchangestream.bitfinex.BitfinexStreamingExchange;
 import info.bitrich.xchangestream.bitstamp.v2.BitstampStreamingExchange;
 import info.bitrich.xchangestream.core.StreamingExchange;
 import info.bitrich.xchangestream.core.StreamingExchangeFactory;
+import info.bitrich.xchangestream.core.StreamingMarketDataService;
+import info.bitrich.xchangestream.poloniex2.PoloniexStreamingExchange;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
+import org.knowm.xchange.Exchange;
+import org.knowm.xchange.ExchangeSpecification;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.meta.CurrencyPairMetaData;
 import org.knowm.xchange.dto.trade.LimitOrder;
@@ -15,6 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,27 +31,41 @@ public class ArbitrageService {
 
     private static final Logger logger = LoggerFactory.getLogger(ArbitrageService.class);
 
-    private final StreamingExchange exchange;
-    private final Arbitrage arbitrage;
+    private static List<StreamingExchange> exchanges = new ArrayList<StreamingExchange>() {{
+        add(StreamingExchangeFactory.INSTANCE.createExchange(PoloniexStreamingExchange.class.getName()));
+        add(StreamingExchangeFactory.INSTANCE.createExchange(BitstampStreamingExchange.class.getName()));
+        add(StreamingExchangeFactory.INSTANCE.createExchange(BitfinexStreamingExchange.class.getName()));
+    }};
 
-    public ArbitrageService(Arbitrage arbitrage) {
-        this.arbitrage = arbitrage;
+    public ArbitrageService() {
+    }
+
+    public List<ExchangeSpecification> listExchanges() {
+        return exchanges.stream().map(Exchange::getExchangeSpecification).collect(Collectors.toList());
+    }
 
 
-        exchange = StreamingExchangeFactory.INSTANCE.createExchange(BitfinexStreamingExchange.class.getName());
+    public void connectToExchange(String exchangeClassName) {
+        StreamingExchange exchange = StreamingExchangeFactory.INSTANCE.createExchange(exchangeClassName);
         exchange.connect().blockingAwait();
-        logger.info("Connected to Bitfinex");
+        logger.info("Connected to {}", exchange.getExchangeSpecification().getExchangeName());
 
         Map<CurrencyPair, CurrencyPairMetaData> currencies = exchange.getExchangeMetaData().getCurrencyPairs();
 
+        Arbitrage arbitrage = new Arbitrage("0.002");
+
         for (CurrencyPair currencyPair : currencies.keySet()) {
-            logger.info("subscribing to {}", currencyPair);
-            subscribeToPair(currencyPair);
+            CurrencyPairMetaData meta = currencies.get(currencyPair);
+            logger.info("subscribing to {}, meta: {}", currencyPair, meta);
+            subscribeToPair(currencyPair, arbitrage, exchange.getStreamingMarketDataService());
         }
     }
 
-    public void subscribeToPair(CurrencyPair currencyPair) {
-        exchange.getStreamingMarketDataService()
+    public void subscribeToPair(
+            CurrencyPair currencyPair,
+            Arbitrage arbitrage,
+            StreamingMarketDataService streamingMarketDataService) {
+        streamingMarketDataService
                 .getOrderBook(currencyPair)
                 .toFlowable(BackpressureStrategy.BUFFER)
                 .parallel()
@@ -56,7 +76,8 @@ public class ArbitrageService {
 
                     return Flowable.fromIterable(
                             Stream.of(ask, bid)
-                                    .flatMap(Optional::stream)
+                                    .filter(Optional::isPresent)
+                                    .map(Optional::get)
                                     .collect(Collectors.toList()));
                 })
                 .sequential()
@@ -66,6 +87,6 @@ public class ArbitrageService {
                 .runOn(Schedulers.computation())
                 .flatMap(graph -> Flowable.fromIterable(Arbitrage.findPossibilities(graph)))
                 .sequential()
-                .forEach(System.out::println);
+                .forEach(arbitragePossibility -> logger.info("\n{}", arbitragePossibility));
     }
 }

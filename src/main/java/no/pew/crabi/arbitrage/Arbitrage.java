@@ -9,27 +9,23 @@ import org.knowm.xchange.dto.Order;
 import org.knowm.xchange.dto.trade.LimitOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component
 public class Arbitrage {
 
     private static final Logger logger = LoggerFactory.getLogger(Arbitrage.class);
-
-    private static final String FEE = "0.002";
 
     private final MutableGraphImpl<String, LimitOrder> cycleGraph;
     private final BigDecimal bidFee;
     private final BigDecimal askFee;
 
-    public Arbitrage() {
+    public Arbitrage(String fee) {
         this.cycleGraph = new MutableGraphImpl<>();
-        this.bidFee = BigDecimal.ONE.subtract(new BigDecimal(FEE));
-        this.askFee = BigDecimal.ONE.add(new BigDecimal(FEE));
+        this.bidFee = BigDecimal.ONE.subtract(new BigDecimal(fee));
+        this.askFee = BigDecimal.ONE.add(new BigDecimal(fee));
     }
 
     public ImmutableGraph<String, LimitOrder> addOrder(LimitOrder order) {
