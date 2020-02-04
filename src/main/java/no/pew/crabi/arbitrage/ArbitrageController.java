@@ -23,9 +23,9 @@ public class ArbitrageController {
     }
 
     @PostMapping("/exchanges/{exchangeClassName}/connect")
-    public ResponseEntity<String> connect(@PathVariable("exchangeClassName") String exchangeClassName) {
+    public ResponseEntity<ExchangeSubscription> connect(@PathVariable("exchangeClassName") String exchangeClassName) {
         arbitrageService.connectToExchange(exchangeClassName);
-        return new ResponseEntity<>("connected", HttpStatus.OK);
+        return new ResponseEntity<>(new ExchangeSubscription(true), HttpStatus.OK);
     }
 
 }
