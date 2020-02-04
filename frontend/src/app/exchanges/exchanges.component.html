@@ -1,0 +1,6 @@
+<p>exchanges works!</p>
+
+<div *ngFor="let exchange of exchanges | async">
+  <span>{{ exchange.exchangeName }}</span>
+  <button (click)="connectToExchange(exchange)">Connect</button>
+</div>
