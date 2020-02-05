@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "openapi.crabi.base-path",
+      "type": "java.lang.String",
+      "description": "base path of the api."
+    }
+  ]
+}

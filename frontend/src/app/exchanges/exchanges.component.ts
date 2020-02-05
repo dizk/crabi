@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {ExchangesService} from "../exchanges.service";
+import {DefaultService, Exchange} from 'crabi-ng-api';
 
 @Component({
   selector: 'app-exchanges',
@@ -10,15 +10,15 @@ export class ExchangesComponent implements OnInit {
 
   exchanges;
 
-  constructor(private exchangesService: ExchangesService) {
+  constructor(private apiGateway: DefaultService) {
   }
 
   ngOnInit() {
-    this.exchanges = this.exchangesService.getExchanges();
+    this.exchanges = this.apiGateway.getExchanges();
   }
 
-  connectToExchange(exchange) {
-    this.exchangesService.connectToExchange(exchange).subscribe({
+  connectToExchange(exchange: Exchange) {
+    this.apiGateway.connectToExchange(exchange).subscribe({
       next() {
         console.log("connected")
       },

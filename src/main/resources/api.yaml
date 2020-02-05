@@ -1,0 +1,45 @@
+openapi: 3.0.2
+info:
+  title: Crabi
+  version: 0.0.1
+
+paths:
+  /exchanges:
+    get:
+      operationId: getExchanges
+      responses:
+        200:
+          description: Get all available exchanges
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exchanges'
+  /exchanges/connect:
+    post:
+      operationId: connectToExchange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Exchange'
+      responses:
+        200:
+          description: Connected to the exchange
+
+
+
+
+components:
+  schemas:
+    Exchange:
+      properties:
+        exchangeName:
+          type: string
+        exchangeClass:
+          type: string
+
+    Exchanges:
+      items:
+        $ref: '#/components/schemas/Exchange'
+      type: array

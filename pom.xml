@@ -2,6 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <properties>
+        <openapi-generator-maven-plugin.version>4.2.3</openapi-generator-maven-plugin.version>
+        <springfox-version>2.8.0</springfox-version>
+        <crabi-ng-api-output>${project.basedir}/target/generated-sources/openapi/src/gen/ts</crabi-ng-api-output>
+    </properties>
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -21,7 +26,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-rest</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -33,12 +38,42 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- OPEN API -->
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <version>${springfox-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger-ui</artifactId>
+            <version>${springfox-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.2.11</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+            <version>0.1.0</version>
+        </dependency>
+        <!-- Bean Validation API support -->
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>info.bitrich.xchange-stream</groupId>
             <artifactId>xchange-stream-core</artifactId>
             <version>4.4.0</version>
         </dependency>
-
 
         <dependency>
             <groupId>info.bitrich.xchange-stream</groupId>
@@ -129,7 +164,37 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>yarn install</id>
+                        <id>yarn install crabi-ng-api</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${crabi-ng-api-output}</workingDirectory>
+                            <arguments>install</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>yarn build crabi-ng-api</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${crabi-ng-api-output}</workingDirectory>
+                            <arguments>build</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>yarn link crabi-ng-api</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${crabi-ng-api-output}/dist</workingDirectory>
+                            <arguments>link</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>yarn install frontend</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
@@ -138,7 +203,16 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>yarn build</id>
+                        <id>yarn link frontend to crabi-ng-api</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>link crabi-ng-api</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>yarn build frontend</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
@@ -162,10 +236,51 @@
                             <outputDirectory>${basedir}/target/classes/resources</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/frontend/build</directory>
+                                    <directory>${basedir}/frontend/dist/crabi-frontend</directory>
                                     <filtering>true</filtering>
                                 </resource>
                             </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>${openapi-generator-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-server-code</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/api.yaml</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <apiPackage>no.pew.crabi.api</apiPackage>
+                            <modelPackage>no.pew.crabi.model</modelPackage>
+                            <supportingFilesToGenerate>ApiUtil.java,OpenAPIDocumentationConfig.java
+                            </supportingFilesToGenerate>
+                            <configOptions>
+                                <delegatePattern>true</delegatePattern>
+                                <dateLibrary>java8</dateLibrary>
+                                <sourceFolder>src/gen/java/main</sourceFolder>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-client-code</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/api.yaml</inputSpec>
+                            <generatorName>typescript-angular</generatorName>
+                            <output>${crabi-ng-api-output}</output>
+                            <configOptions>
+                                <npmName>crabi-ng-api</npmName>
+                                <ngVersion>8.2.14</ngVersion>
+                            </configOptions>
                         </configuration>
                     </execution>
                 </executions>
