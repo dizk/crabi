@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ProtobufMarkets;
+option java_package = "ch.cryptowat.protobuf";
+
+message AssetUpdateMessage {
+	int32 asset = 1;
+
+	oneof Update {
+		AssetUSDVolumeUpdate usdVolumeUpdate = 2;
+	}
+}
+
+message AssetUSDVolumeUpdate {
+	string volume = 1;
+}
